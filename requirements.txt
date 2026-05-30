@@ -1,0 +1,16 @@
+# omni-extract — the CORE needs NOTHING (pure Python standard library).
+# These optional packages unlock the heavier formats. Install what you need.
+
+PyMuPDF>=1.24            # PDF: embedded text + rendering scanned pages for OCR
+Pillow>=10              # image preprocessing for OCR (grayscale/contrast/upscale)
+charset-normalizer>=3   # better automatic text-encoding detection
+
+# System dependency for OCR (images + scanned PDFs):
+#   macOS:  brew install tesseract tesseract-lang
+#   Debian: sudo apt install tesseract-ocr
+#   Fedora: sudo dnf install tesseract
+#
+# Optional extras:
+#   pip install pillow-heif      # iPhone .heic images
+#   pip install py7zr            # .7z archives
+#   pip install extract-msg      # Outlook .msg

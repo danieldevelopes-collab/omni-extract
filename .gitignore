@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# venv
+.venv/
+venv/
+.python-version
+
+# omni-extract runtime
+.omni-cache/
+out/
+
+# macOS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp

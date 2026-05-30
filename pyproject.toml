@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omni-extract"
+version = "0.1.0"
+description = "Offline universal text extraction — any file, all its text."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Daniel Bratcher" }]
+keywords = ["ocr", "text-extraction", "pdf", "tesseract", "offline"]
+# The CORE has zero third-party dependencies (stdlib only).
+dependencies = []
+
+[project.optional-dependencies]
+# unlock PDFs (text + render scanned pages for OCR)
+pdf = ["PyMuPDF>=1.24"]
+# better OCR image preprocessing (+ HEIC via pillow-heif)
+ocr = ["Pillow>=10"]
+# better text-encoding detection
+text = ["charset-normalizer>=3"]
+# everything
+full = ["PyMuPDF>=1.24", "Pillow>=10", "charset-normalizer>=3"]
+
+[project.scripts]
+omni-extract = "omniextract.cli:main"
+
+[tool.setuptools]
+packages = ["omniextract", "omniextract.backends"]
