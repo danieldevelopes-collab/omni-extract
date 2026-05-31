@@ -81,27 +81,18 @@ def _process(args):
     return doc
 
 
-def run(paths, opts: Optional[Options] = None, workers: Optional[int] = None,
-        cache_dir: Optional[str] = None,
-        progress: Optional[Callable] = None) -> List[Document]:
-    opts = opts or Options()
-    files = list(iter_files(paths))
-    od = _opts_to_dict(opts)
-    args = [(f, od, cache_dir) for f in files]
-    total = len(files)
-    results: List[Document] = []
+def _run_sequential(args, total, progress) -> List[Document]:
+    results = []
+    for i, a in enumerate(args, 1):
+        doc = _process(a)
+        results.append(doc)
+        if progress:
+            progress(i, total, doc)
+    return results
 
-    if workers is None:
-        workers = min(os.cpu_count() or 2, 8)
 
-    if workers <= 1 or total <= 1:
-        for i, a in enumerate(args, 1):
-            doc = _process(a)
-            results.append(doc)
-            if progress:
-                progress(i, total, doc)
-        return results
-
+def _run_parallel(args, total, workers, progress) -> List[Document]:
+    results = []
     with ProcessPoolExecutor(max_workers=workers) as pool:
         futs = {pool.submit(_process, a): a[0] for a in args}
         done = 0
@@ -115,3 +106,27 @@ def run(paths, opts: Optional[Options] = None, workers: Optional[int] = None,
             if progress:
                 progress(done, total, doc)
     return results
+
+
+def run(paths, opts: Optional[Options] = None, workers: Optional[int] = None,
+        cache_dir: Optional[str] = None,
+        progress: Optional[Callable] = None) -> List[Document]:
+    opts = opts or Options()
+    files = list(iter_files(paths))
+    od = _opts_to_dict(opts)
+    args = [(f, od, cache_dir) for f in files]
+    total = len(files)
+
+    if workers is None:
+        workers = min(os.cpu_count() or 2, 8)
+
+    if workers <= 1 or total <= 1:
+        return _run_sequential(args, total, progress)
+
+    try:
+        return _run_parallel(args, total, workers, progress)
+    except (RuntimeError, OSError, ImportError):
+        # Parallelism unavailable (e.g. used as a library on Windows without
+        # an `if __name__ == '__main__'` guard, or a restricted sandbox).
+        # Fall back to sequential rather than failing the whole run.
+        return _run_sequential(args, total, progress)
