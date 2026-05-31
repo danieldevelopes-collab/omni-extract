@@ -1,18 +1,19 @@
 """Command-line interface.
 
     omni-extract FILE...              text to stdout
-    omni-extract --json FILE          structured JSON
-    omni-extract --out DIR PATHS...   mirror .txt (+ .json) per input
+    omni-extract -f csv ./folder/     one row per document (great for batches)
+    omni-extract -f json FILE         structured output (txt|json|jsonl|csv|md)
+    omni-extract --out DIR PATHS...   write one file per input in --format
+    omni-extract --serve              launch the local web UI in your browser
     omni-extract --capabilities       what's installed + install hints
 """
 
 import argparse
-import json
 import os
 import re
 import sys
 
-from . import core, pipeline
+from . import core, export, pipeline
 from .backends.base import Options
 
 _C = sys.stderr.isatty()
@@ -51,8 +52,17 @@ def main(argv=None) -> int:
         prog="omni-extract",
         description="Offline universal text extraction — any file, all its text.")
     ap.add_argument("paths", nargs="*", help="files and/or directories")
-    ap.add_argument("--json", action="store_true", help="emit structured JSON")
-    ap.add_argument("--out", metavar="DIR", help="write <name>.txt (+ .json) per input")
+    ap.add_argument("--json", action="store_true", help="alias for --format json")
+    ap.add_argument("--format", "-f", choices=list(export.FORMATS), default=None,
+                    help="output format: txt | json | jsonl | csv | md "
+                         "(csv/jsonl = one row per document, ideal for batches)")
+    ap.add_argument("--out", metavar="DIR",
+                    help="write one file per input in the chosen --format")
+    ap.add_argument("--serve", action="store_true",
+                    help="launch the local web UI in your browser")
+    ap.add_argument("--port", type=int, default=0, help="port for --serve (0 = auto)")
+    ap.add_argument("--no-open", action="store_true",
+                    help="with --serve, don't auto-open the browser")
     ap.add_argument("--ocr-lang", default="eng", help="tesseract language(s), e.g. eng+fra")
     ap.add_argument("--ocr-psm", type=int, default=3, help="tesseract page-seg mode")
     ap.add_argument("--no-ocr-pdf", action="store_true", help="don't OCR scanned PDF pages")
@@ -69,10 +79,16 @@ def main(argv=None) -> int:
     except (AttributeError, ValueError):
         pass
 
+    if args.serve:
+        from . import webapp
+        webapp.serve(port=args.port, open_browser=not args.no_open)
+        return 0
     if args.capabilities:
         return _capabilities()
     if not args.paths:
-        ap.error("no input files (or use --capabilities)")
+        ap.error("no input files (use --serve for the UI, or --capabilities)")
+
+    fmt = args.format or ("json" if args.json else "txt")
 
     opts = Options(ocr_lang=args.ocr_lang, ocr_psm=args.ocr_psm,
                    ocr_pdf=not args.no_ocr_pdf, timeout=args.timeout,
@@ -98,31 +114,24 @@ def main(argv=None) -> int:
     results = pipeline.run(args.paths, opts=opts, workers=args.workers,
                            cache_dir=args.cache, progress=progress)
 
-    # ---- output ----
+    # ---- output (single source of truth: the export module) ----
     if args.out:
         os.makedirs(args.out, exist_ok=True)
         taken = set()
         for doc in results:
             stem = _safe_name(doc.path, taken)
-            with open(os.path.join(args.out, stem + ".txt"), "w",
-                      encoding="utf-8") as f:
-                f.write(doc.text)
-            with open(os.path.join(args.out, stem + ".json"), "w",
-                      encoding="utf-8") as f:
-                f.write(doc.to_json(include_text=False))
+            body = export.export_documents([doc], fmt)
+            with open(os.path.join(args.out, stem + export.file_extension(fmt)),
+                      "w", encoding="utf-8") as f:
+                f.write(body)
         if not args.quiet:
-            sys.stderr.write(f"  wrote {len(results)} file(s) to {args.out}/\n")
-    elif args.json:
-        payload = [d.to_dict() for d in results]
-        out = payload[0] if len(payload) == 1 else payload
-        print(json.dumps(out, ensure_ascii=False, indent=2))
+            sys.stderr.write(
+                f"  wrote {len(results)} file(s) to {args.out}/ as {fmt}\n")
     else:
-        for i, doc in enumerate(results):
-            if len(results) > 1:
-                print(f"\n===== {doc.path} =====")
-            sys.stdout.write(doc.text)
-            if doc.text and not doc.text.endswith("\n"):
-                sys.stdout.write("\n")
+        body = export.export_documents(results, fmt)
+        sys.stdout.write(body)
+        if body and not body.endswith("\n"):
+            sys.stdout.write("\n")
 
     if not args.quiet:
         sys.stderr.write(

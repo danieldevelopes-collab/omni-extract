@@ -29,3 +29,7 @@ omni-extract = "omniextract.cli:main"
 
 [tool.setuptools]
 packages = ["omniextract", "omniextract.backends"]
+
+[tool.setuptools.package-data]
+# ship the local web UI (HTML/CSS/JS) so `omni-extract --serve` works after install
+omniextract = ["web/*.html", "web/*.css", "web/*.js"]

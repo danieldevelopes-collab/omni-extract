@@ -10,8 +10,9 @@
 
 ```bash
 omni-extract scan.pdf                 # → text on stdout
-omni-extract --json invoice.png       # → structured JSON
-omni-extract --out text/ ./inbox/     # → mirror a whole folder to .txt files
+omni-extract -f csv ./invoices/       # → one row per document (csv / jsonl / json / md)
+omni-extract --serve                  # → open the desktop-grade UI in your browser
+omni-extract --out text/ ./inbox/     # → mirror a whole folder to files
 omni-extract --capabilities           # → what's installed + how to get the rest
 ```
 
@@ -199,6 +200,25 @@ alone.** The only external pieces are **Tesseract** (for pixels) and **PyMuPDF**
 
 ---
 
+## A desktop-grade interface
+
+Prefer clicking to typing? `omni-extract --serve` opens a local app in your
+browser — drag in any files, watch them resolve, and download the result as
+**Text, JSON, JSON Lines, CSV, or Markdown**. It is a single static page served
+from `127.0.0.1` that makes **no network calls**, follows your system's light or
+dark appearance, and — because it's a web page — looks and behaves **identically
+on macOS, Linux, and Windows**.
+
+![The omni-extract desktop interface — a drag-and-drop zone over a calm, Apple-style dark layout](docs/screenshot-ui.png)
+
+The **CSV** and **JSON Lines** exports are built for *repeat documents*: drop a
+folder of fifty similar invoices and get one tidy row per file — path, kind,
+backend, character and word counts, timing, warnings, and the extracted text —
+ready for a spreadsheet or a data pipeline. Every download is generated locally
+in your browser; nothing is uploaded anywhere.
+
+---
+
 ## Efficiency
 
 - **Lazy imports** — heavy libraries load only when a matching file appears.
@@ -271,8 +291,9 @@ hint for anything that isn't.
 ### CLI
 ```bash
 omni-extract FILE...                  # text to stdout (headers when multiple)
-omni-extract --json FILE              # structured Document as JSON
-omni-extract --out DIR PATHS...       # write <name>.txt (+ .json) per input
+omni-extract -f csv ./folder/         # output format: txt | json | jsonl | csv | md
+omni-extract --serve                  # open the desktop UI in your browser
+omni-extract --out DIR PATHS...       # write one file per input, in --format
 omni-extract --ocr-lang eng+fra IMG   # OCR languages (100+ available)
 omni-extract --workers 8 ./folder/    # parallelism
 omni-extract --cache .cache ./folder/ # skip unchanged files on re-run
@@ -327,9 +348,12 @@ Hewlett-Packard and Google who built and freed **Tesseract**.
 - **Homebrew** — the package manager (Max Howell & maintainers) used to install
   Tesseract.
 
-### The language
-- **Python** — created by **Guido van Rossum** (1991). The whole project is
+### The languages
+- **Python** — created by **Guido van Rossum** (1991). The whole backend is
   ordinary, dependency-light Python 3.
+- **JavaScript** — created by **Brendan Eich** (1995). The desktop interface is
+  vanilla HTML, CSS, and JavaScript — no framework, no build step — talking to
+  the Python server over a tiny local JSON API.
 
 ### The file formats & standards we read
 - **PDF** — John Warnock & Charles Geschke, Adobe (1993; now ISO 32000).
