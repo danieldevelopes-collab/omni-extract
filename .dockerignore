@@ -1,0 +1,12 @@
+# Keep the build context small and the image clean.
+.venv/
+.git/
+.github/
+**/__pycache__/
+*.pyc
+*.pyo
+.cache/
+.DS_Store
+samples/
+tests/
+*.egg-info/

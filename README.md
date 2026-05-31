@@ -91,6 +91,29 @@ text comes out, that text is the inheritance of every name above.
 
 ---
 
+## The story behind this project
+
+omni-extract is personal. It was my **first project that put two things
+together at once — packaging real software in Docker, and running a
+machine-learning model end to end.**
+
+The "model" is easy to miss. Modern Tesseract (v4 and later) does *not*
+pattern-match characters the way the 1990s engines did — it runs an **LSTM
+recurrent neural network**, trained on millions of rendered text-lines and
+shipped as a single file, `eng.traineddata`. So when you run:
+
+```bash
+docker run --rm -v "$PWD:/data" omni-extract scan.pdf
+```
+
+you are starting a container, loading a trained neural network into memory, and
+watching it *read* a page — with the recovered text landing on stdout a moment
+later. That whole loop — **a file in, a container up, a model running, text
+out** — is the thing that made automation finally click for me. Everything else
+in this repository grew outward from that one satisfying moment.
+
+---
+
 ## How omni-extract works
 
 ```
@@ -223,6 +246,20 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt             # PyMuPDF, Pillow, charset-normalizer
 brew install tesseract tesseract-lang        # macOS  (apt install tesseract-ocr on Debian)
 ```
+
+**Docker (fully self-contained — nothing on the host but Docker):**
+
+```bash
+docker build -t omni-extract .
+docker run --rm omni-extract                                  # show capabilities
+docker run --rm -v "$PWD:/data" omni-extract scan.pdf         # extract one file
+docker run --rm -v "$PWD:/data" omni-extract --json page.png  # JSON output
+```
+
+The image bundles Python, PyMuPDF, Pillow, **and the Tesseract OCR engine with
+its English LSTM model** — about 490 MB — and runs with **no network access at
+all**. It is the most reproducible way to get the full pipeline on any machine:
+mount your files at `/data` and the text comes out on stdout.
 
 `omni-extract --capabilities` always shows what's live and the one-line install
 hint for anything that isn't.
