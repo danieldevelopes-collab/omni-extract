@@ -5,7 +5,7 @@
 > can possibly recover**. Fully **offline**. Fast. It never crashes on a bad
 > file, and it never invents a single character it didn't actually read.
 
-**By Daniel Bratcher · [@danieldevelopes-collab](https://github.com/danieldevelopes-collab)**
+**By Daniel Bracher · [@danieldevelopes-collab](https://github.com/danieldevelopes-collab)**
 · MIT licensed · Python 3 · **the core has zero third-party dependencies**
 
 ```bash
@@ -401,4 +401,4 @@ Standing on the shoulders of giants, every one.
 
 ## License
 
-[MIT](LICENSE) © 2026 Daniel Bratcher (danieldevelopes-collab).
+[MIT](LICENSE) © 2026 Daniel Bracher (danieldevelopes-collab).
